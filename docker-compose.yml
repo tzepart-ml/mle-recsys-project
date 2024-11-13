@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  recommendations_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["uvicorn", "src.recommendations_service:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
+  features_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["uvicorn", "src.features_service:app", "--host", "0.0.0.0", "--port", "8010"]
+    ports:
+      - "8010:8010"
+    networks:
+      - app-network
+
+  events_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["uvicorn", "src.events_service:app", "--host", "0.0.0.0", "--port", "8020"]
+    ports:
+      - "8020:8020"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
