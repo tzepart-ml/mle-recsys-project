@@ -7,8 +7,8 @@ import requests
 
 logger = logging.getLogger("uvicorn.error")
 
-features_store_url = "http://127.0.0.1:8010"
-events_store_url = "http://127.0.0.1:8020"
+features_store_url = "http://features_service:8010"
+events_store_url = "http://events_service:8020"
 
 rec_store = Recommendations()
 rec_store.load(
@@ -21,6 +21,16 @@ rec_store.load(
     "/app/data/top_popular.parquet",
     columns=["item_id", "popularity_weighted"],
 )
+
+
+def dedup_ids(ids):
+    """
+    Дедублицирует список идентификаторов, оставляя только первое вхождение
+    """
+    seen = set()
+    ids = [id for id in ids if not (id in seen or seen.add(id))]
+
+    return ids
 
 
 @asynccontextmanager
@@ -47,16 +57,6 @@ async def recommendations_offline(user_id: int, k: int = 100):
     return {"recs": recs}
 
 
-def dedup_ids(ids):
-    """
-    Дедублицирует список идентификаторов, оставляя только первое вхождение
-    """
-    seen = set()
-    ids = [id for id in ids if not (id in seen or seen.add(id))]
-
-    return ids
-
-
 @app.post("/recommendations_online")
 async def recommendations_online(user_id: int, k: int = 100):
     """
@@ -72,25 +72,15 @@ async def recommendations_online(user_id: int, k: int = 100):
 
     # получаем список айтемов, похожих на последние три, с которыми взаимодействовал пользователь
     items = []
-    scores = []
     for item_id in events:
         # для каждого item_id получаем список похожих в item_similar_items
         params = {"item_id": item_id, "k": k}
         resp = requests.post(features_store_url + "/similar_items", headers=headers, params=params)
         item_similar_items = resp.json()
         items += item_similar_items["item_id_2"]
-        scores += item_similar_items["score"]
-
-    # сортируем похожие объекты по scores в убывающем порядке
-    combined = list(zip(items, scores))
-    combined = sorted(combined, key=lambda x: x[1], reverse=True)
-    combined = [item for item, _ in combined]
-
-    # удаляем дубликаты, чтобы не выдавать одинаковые рекомендации
-    recs = dedup_ids(combined)
 
     # ограничиваем рекомендации до k
-    recs = recs[:k]
+    recs = items[:k]
 
     return {"recs": recs}
 
@@ -110,6 +100,7 @@ async def recommendations(user_id: int, k: int = 100):
     recs_blended = []
 
     min_length = min(len(recs_offline), len(recs_online))
+
     # Чередуем элементы из списков, пока позволяет минимальная длина
     for i in range(min_length):
         recs_blended.append(recs_offline[i])
