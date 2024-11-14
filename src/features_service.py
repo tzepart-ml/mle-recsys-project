@@ -46,7 +46,7 @@ sim_items_store = SimilarItems()
 async def lifespan(app: FastAPI):
     # Load the data when the service starts
     sim_items_store.load(
-        path="./../data/similar_items.parquet",  # Specify the correct path to your parquet file
+        path="/app/data/similar.parquet",  # Specify the correct path to your parquet file
         columns=["item_id_1", "item_id_2", "score"]
     )
     logger.info("Ready!")

@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from recommendation_handler import Recommendations
+from src.recommendation_handler import Recommendations
 import requests
 
 logger = logging.getLogger("uvicorn.error")
@@ -13,13 +13,13 @@ events_store_url = "http://127.0.0.1:8020"
 rec_store = Recommendations()
 rec_store.load(
     "personal",
-    "./../data/final_recommendations_feat.parquet",
-    columns=["user_id", "item_id", "rank"],
+    "/app/data/recommendations.parquet",
+    columns=["user_id", "item_id", "score"],
 )
 rec_store.load(
     "default",
-    "./../data/top_recs.parquet",
-    columns=["item_id", "rank"],
+    "/app/data/top_popular.parquet",
+    columns=["item_id", "score"],
 )
 
 
