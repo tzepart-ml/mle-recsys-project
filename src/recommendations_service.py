@@ -19,7 +19,7 @@ rec_store.load(
 rec_store.load(
     "default",
     "/app/data/top_popular.parquet",
-    columns=["item_id", "score"],
+    columns=["item_id", "popularity_weighted"],
 )
 
 

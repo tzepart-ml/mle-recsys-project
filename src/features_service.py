@@ -30,10 +30,10 @@ class SimilarItems:
         try:
             # Retrieve the top k similar items for the given item_id
             i2i = self._similar_items.loc[item_id].head(k)
-            i2i = i2i[["item_id_2", "score"]].to_dict(orient="list")
+            i2i = i2i[["item_id_2"]].to_dict(orient="list")
         except KeyError:
             logger.error(f"No recommendations found for item_id: {item_id}")
-            i2i = {"item_id_2": [], "score": []}
+            i2i = {"item_id_2": []}
 
         return i2i
 
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
     # Load the data when the service starts
     sim_items_store.load(
         path="/app/data/similar.parquet",  # Specify the correct path to your parquet file
-        columns=["item_id_1", "item_id_2", "score"]
+        columns=["item_id_1", "item_id_2"]
     )
     logger.info("Ready!")
     # Wait until the application is shut down
