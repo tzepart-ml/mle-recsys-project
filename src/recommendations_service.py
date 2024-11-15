@@ -60,26 +60,33 @@ async def recommendations_offline(user_id: int, k: int = 100):
 @app.post("/recommendations_online")
 async def recommendations_online(user_id: int, k: int = 100):
     """
-    Возвращает список онлайн-рекомендаций длиной k для пользователя user_id
+    Возвращает список онлайн-рекомендаций длиной k для пользователя user_id.
+    Если пользователь не имеет последних событий, возвращает дефолтные рекомендации.
     """
 
     headers = {"Content-type": "application/json", "Accept": "text/plain"}
 
-    # получаем список последних событий пользователя, возьмём три последних
+    # Получаем список последних событий пользователя, возьмём три последних
     params = {"user_id": user_id, "k": 3}
     resp = requests.post(events_store_url + "/get", headers=headers, params=params)
     events = resp.json().get("events", [])
 
-    # получаем список айтемов, похожих на последние три, с которыми взаимодействовал пользователь
+    if not events:
+        # Если событий нет, возвращаем дефолтные рекомендации
+        logger.info(f"User {user_id} has no recent events, returning default recommendations.")
+        default_recs = rec_store.get_default(k)
+        return {"recs": default_recs}
+
+    # Получаем список айтемов, похожих на последние три, с которыми взаимодействовал пользователь
     items = []
     for item_id in events:
-        # для каждого item_id получаем список похожих в item_similar_items
+        # Для каждого item_id получаем список похожих в item_similar_items
         params = {"item_id": item_id, "k": k}
         resp = requests.post(features_store_url + "/similar_items", headers=headers, params=params)
         item_similar_items = resp.json()
         items += item_similar_items["item_id_2"]
 
-    # ограничиваем рекомендации до k
+    # Ограничиваем рекомендации до k
     recs = items[:k]
 
     return {"recs": recs}

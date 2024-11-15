@@ -41,11 +41,27 @@ class Recommendations:
 
         return recs
 
-    def stats(self):
+    def get_default(self, k: int = 100):
+        """
+        Возвращает список рекомендаций для пользователя
+        """
+        recs = self._recs["default"]
+        recs = recs["item_id"].to_list()[:k]
+        self._stats["request_default_count"] += 1
 
-        logger.info("Stats for recommendations")
+        return recs
+
+    def log_stats(self) -> None:
+
+        logger.info("Log Stats for recommendations")
         for name, value in self._stats.items():
             logger.info(f"{name:<30} {value} ")
+
+    def get_stats(self) -> dict:
+
+        logger.info("Get Stats for recommendations")
+        return self._stats
+
 
 
 rec_store = Recommendations()
